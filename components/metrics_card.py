@@ -1,20 +1,13 @@
-"""Component for displaying metrics in a card format."""
+"""Metrics card component."""
 
 import streamlit as st
 
-def metric_card(label: str, value: str, help_text: str = None):
-    """Display a metric in a styled card.
-    
-    Args:
-        label: The metric label
-        value: The metric value
-        help_text: Optional help text to display
-    """
+def metric_card(title: str, value: str, description: str = ""):
+    """Display a metric card with custom styling."""
     st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="big-number">{value}</div>
-            {f'<div class="help-text">{help_text}</div>' if help_text else ''}
+        <div class="metric-container">
+            <div class="metric-title">{title}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-description">{description}</div>
         </div>
     """, unsafe_allow_html=True)
-
