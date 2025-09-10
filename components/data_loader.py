@@ -7,15 +7,46 @@ import pandas as pd
 def load_data(uploaded_file):
     """Load and preprocess data from uploaded file."""
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-        
-        # Convert InvoiceDate to datetime
-        df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
-        
-        # Calculate TotalAmount
-        df['TotalAmount'] = df['Quantity'] * df['UnitPrice']
-        
-        return df
+        try:
+            # Baca CSV dengan parameter tambahan untuk menangani masalah encoding dan parsing
+            df = pd.read_csv(
+                uploaded_file,
+                encoding='utf-8',  # Coba dengan UTF-8 encoding
+                on_bad_lines='skip',  # Skip baris yang bermasalah
+                low_memory=False,  # Hindari warning untuk mixed types
+                dtype={
+                    'InvoiceNo': str,
+                    'StockCode': str,
+                    'Description': str,
+                    'Quantity': float,
+                    'UnitPrice': float,
+                    'CustomerID': str,
+                    'Country': str
+                }
+            )
+            
+            # Bersihkan data
+            df = df.dropna(subset=['InvoiceNo', 'Description', 'Quantity', 'UnitPrice'])
+            
+            # Convert InvoiceDate to datetime
+            df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'], errors='coerce')
+            df = df.dropna(subset=['InvoiceDate'])  # Hapus baris dengan tanggal invalid
+            
+            # Calculate TotalAmount
+            df['TotalAmount'] = df['Quantity'] * df['UnitPrice']
+            
+            # Filter data yang valid
+            df = df[
+                (df['Quantity'] > 0) &  # Hanya quantity positif
+                (df['UnitPrice'] > 0)   # Hanya harga positif
+            ]
+            
+            return df
+            
+        except Exception as e:
+            st.error(f"Error loading data: {str(e)}")
+            return None
+            
     return None
 
 def display_data_preview(df: pd.DataFrame):
