@@ -110,37 +110,21 @@ def display_market_basket_analysis(df: pd.DataFrame):
         rules = association_rules(freq_items, metric="lift", min_threshold=1)
         rules = rules.sort_values("lift", ascending=False)
         
-        # Format rules untuk tampilan
+        # Format rules untuk tampilan yang lebih sederhana
         formatted_rules = []
         for _, row in rules.head(10).iterrows():
             formatted_rules.append({
                 'Products Bought': ', '.join(list(row['antecedents'])),
                 'Leads to Buying': ', '.join(list(row['consequents'])),
-                'Support (%)': f"{row['support']*100:.1f}%",
-                'Confidence (%)': f"{row['confidence']*100:.1f}%",
-                'Lift Value': row['lift'],  # Simpan nilai numerik
-                'Lift': f"{row['lift']:.2f}"  # Format untuk display
+                'Support': f"{row['support']*100:.1f}%",
+                'Confidence': f"{row['confidence']*100:.1f}%",
+                'Lift': f"{row['lift']:.2f}"
             })
         
         rules_formatted = pd.DataFrame(formatted_rules)
         
-        # Styling berdasarkan nilai Lift numerik
-        def style_lift(val):
-            try:
-                lift = float(val)
-                if lift > 2:
-                    return 'color: #00ff00'
-                elif lift > 1:
-                    return 'color: #ffff00'
-                return 'color: #ff4b4b'
-            except:
-                return ''
-        
-        # Tampilkan dataframe dengan styling
-        st.dataframe(
-            rules_formatted.style.applymap(style_lift, subset=['Lift Value']).hide_columns(['Lift Value']),
-            use_container_width=True
-        )
+        # Tampilkan dataframe tanpa styling khusus
+        st.dataframe(rules_formatted, use_container_width=True)
         
         # Visualization
         scatter = alt.Chart(rules).mark_circle(size=60).encode(
