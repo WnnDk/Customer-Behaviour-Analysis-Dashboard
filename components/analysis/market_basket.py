@@ -94,17 +94,17 @@ def display_market_basket_analysis(df: pd.DataFrame):
     
     # Market Basket Analysis
     st.markdown("### 🔍 Association Rules Analysis")
-    st.warning("⚠️ Analisis dibatasi pada produk yang muncul di minimal 50 transaksi untuk efisiensi")
+    st.warning("⚠️ Analisis dibatasi pada produk yang muncul di minimal 10 transaksi untuk efisiensi")
     
-    # Filter frequent items and create basket
-    frequent_items = item_stats[item_stats['Transaction_Count'] >= 50].index
+    # Filter frequent items dengan threshold yang lebih rendah
+    frequent_items = item_stats[item_stats['Transaction_Count'] >= 10].index  # Turunkan threshold ke 10 transaksi
     df_filtered = df_filtered[df_filtered['Description'].isin(frequent_items)]
     
     basket = pd.crosstab(index=df_filtered['InvoiceNo'], columns=df_filtered['Description'])
     basket_encoded = (basket > 0).astype(int)
     
-    # Generate frequent itemsets and rules
-    freq_items = apriori(basket_encoded, min_support=0.03, use_colnames=True)
+    # Generate frequent itemsets and rules dengan minimum support yang lebih rendah
+    freq_items = apriori(basket_encoded, min_support=0.01, use_colnames=True)  # Turunkan min_support ke 1%
     
     if not freq_items.empty:
         rules = association_rules(freq_items, metric="lift", min_threshold=1)
