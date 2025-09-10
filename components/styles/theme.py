@@ -22,12 +22,12 @@ def apply_theme():
         .metric-value {
             font-size: 2em;
             font-weight: 700;
-            color: #0c3c7c;
+            color: #00ff00;
         }
         
         .metric-description {
             font-size: 0.9em;
-            color: #666;
+            color: #00000;
         }
         
         .stMarkdown {

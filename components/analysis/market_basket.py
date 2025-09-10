@@ -23,6 +23,21 @@ def prepare_basket_data(df: pd.DataFrame):
     item_stats.columns = ['Total_Units', 'Total_Quantity', 'Transaction_Count']
     return df_filtered, item_stats
 
+def optimize_basket_data(df_filtered, item_stats):
+    """Optimize data for market basket analysis to reduce memory usage."""
+    # Ambil hanya top 100 produk berdasarkan frekuensi transaksi
+    top_products = item_stats.nlargest(100, 'Transaction_Count').index
+    
+    # Filter transaksi untuk hanya menggunakan top products
+    df_filtered = df_filtered[df_filtered['Description'].isin(top_products)]
+    
+    # Ambil sample dari transaksi terbaru jika data terlalu besar
+    if df_filtered['InvoiceNo'].nunique() > 5000:
+        recent_transactions = df_filtered['InvoiceNo'].unique()[-5000:]  # Ambil 5000 transaksi terakhir
+        df_filtered = df_filtered[df_filtered['InvoiceNo'].isin(recent_transactions)]
+    
+    return df_filtered
+
 def display_market_basket_analysis(df: pd.DataFrame):
     """Display Market Basket Analysis section."""
     st.markdown("## 🛍️ Market Basket Analysis")
@@ -94,86 +109,90 @@ def display_market_basket_analysis(df: pd.DataFrame):
     
     # Market Basket Analysis
     st.markdown("### 🔍 Association Rules Analysis")
-    st.warning("⚠️ Analisis dibatasi pada produk yang muncul di minimal 10 transaksi untuk efisiensi")
+    st.warning("⚠️ Analisis dibatasi pada 100 produk teratas dan 5000 transaksi terakhir untuk efisiensi memori")
     
-    # Filter frequent items dengan threshold yang lebih rendah
-    frequent_items = item_stats[item_stats['Transaction_Count'] >= 10].index  # Turunkan threshold ke 10 transaksi
-    df_filtered = df_filtered[df_filtered['Description'].isin(frequent_items)]
+    # Optimize data untuk market basket analysis
+    df_optimized = optimize_basket_data(df_filtered, item_stats)
     
-    basket = pd.crosstab(index=df_filtered['InvoiceNo'], columns=df_filtered['Description'])
+    # Create basket matrix
+    basket = pd.crosstab(index=df_optimized['InvoiceNo'], columns=df_optimized['Description'])
     basket_encoded = (basket > 0).astype(int)
     
-    # Generate frequent itemsets and rules dengan minimum support yang lebih rendah
-    freq_items = apriori(basket_encoded, min_support=0.01, use_colnames=True)  # Turunkan min_support ke 1%
-    
-    if not freq_items.empty:
-        rules = association_rules(freq_items, metric="lift", min_threshold=1)
-        rules = rules.sort_values("lift", ascending=False)
+    try:
+        # Generate frequent itemsets dengan support yang lebih tinggi
+        freq_items = apriori(basket_encoded, min_support=0.02, use_colnames=True)
         
-        # Format rules untuk tampilan yang lebih sederhana
-        formatted_rules = []
-        for _, row in rules.head(10).iterrows():
-            formatted_rules.append({
-                'Products Bought': ', '.join(list(row['antecedents'])),
-                'Leads to Buying': ', '.join(list(row['consequents'])),
-                'Support': f"{row['support']*100:.1f}%",
-                'Confidence': f"{row['confidence']*100:.1f}%",
-                'Lift': f"{row['lift']:.2f}"
-            })
-        
-        rules_formatted = pd.DataFrame(formatted_rules)
-        
-        # Tampilkan dataframe tanpa styling khusus
-        st.dataframe(rules_formatted, use_container_width=True)
-        
-        # Visualization
-        scatter = alt.Chart(rules).mark_circle(size=60).encode(
-            x=alt.X('confidence:Q', 
-                   title='Confidence',
-                   axis=alt.Axis(format='%')),
-            y=alt.Y('lift:Q',
-                   title='Lift'),
-            color=alt.Color('support:Q',
-                          title='Support',
-                          scale=alt.Scale(scheme='viridis')),
-            tooltip=[
-                alt.Tooltip('antecedents:N', title='If Purchase'),
-                alt.Tooltip('consequents:N', title='Then Likely to Purchase'),
-                alt.Tooltip('support:Q', title='Support', format='.1%'),
-                alt.Tooltip('confidence:Q', title='Confidence', format='.1%'),
-                alt.Tooltip('lift:Q', title='Lift', format='.2f')
-            ]
-        ).properties(height=400)
-        
-        st.altair_chart(scatter, use_container_width=True)
-        
-        # Insights
-        st.markdown("### 🎯 Key Insights")
-        strong_associations = len(rules[rules['lift'] > 2])
-        avg_lift = rules['lift'].mean()
-        max_confidence = rules['confidence'].max() * 100
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            metric_card(
-                "Strong Associations",
-                f"{strong_associations}",
-                "Produk dengan Lift > 2"
-            )
-        
-        with col2:
-            metric_card(
-                "Average Lift",
-                f"{avg_lift:.2f}",
-                "Rata-rata kekuatan asosiasi"
-            )
-        
-        with col3:
-            metric_card(
-                "Max Confidence",
-                f"{max_confidence:.1f}%",
-                "Probabilitas tertinggi"
-            )
-    else:
-        st.error("Tidak cukup data untuk menghasilkan association rules. Coba kurangi minimum support.")
-
+        if not freq_items.empty:
+            rules = association_rules(freq_items, metric="lift", min_threshold=1)
+            rules = rules.sort_values("lift", ascending=False)
+            
+            # Format rules untuk tampilan yang lebih sederhana
+            formatted_rules = []
+            for _, row in rules.head(10).iterrows():
+                formatted_rules.append({
+                    'Products Bought': ', '.join(list(row['antecedents'])),
+                    'Leads to Buying': ', '.join(list(row['consequents'])),
+                    'Support': f"{row['support']*100:.1f}%",
+                    'Confidence': f"{row['confidence']*100:.1f}%",
+                    'Lift': f"{row['lift']:.2f}"
+                })
+            
+            rules_formatted = pd.DataFrame(formatted_rules)
+            
+            # Tampilkan dataframe tanpa styling khusus
+            st.dataframe(rules_formatted, use_container_width=True)
+            
+            # Visualization
+            scatter = alt.Chart(rules).mark_circle(size=60).encode(
+                x=alt.X('confidence:Q', 
+                       title='Confidence',
+                       axis=alt.Axis(format='%')),
+                y=alt.Y('lift:Q',
+                       title='Lift'),
+                color=alt.Color('support:Q',
+                              title='Support',
+                              scale=alt.Scale(scheme='viridis')),
+                tooltip=[
+                    alt.Tooltip('antecedents:N', title='If Purchase'),
+                    alt.Tooltip('consequents:N', title='Then Likely to Purchase'),
+                    alt.Tooltip('support:Q', title='Support', format='.1%'),
+                    alt.Tooltip('confidence:Q', title='Confidence', format='.1%'),
+                    alt.Tooltip('lift:Q', title='Lift', format='.2f')
+                ]
+            ).properties(height=400)
+            
+            st.altair_chart(scatter, use_container_width=True)
+            
+            # Insights
+            st.markdown("### 🎯 Key Insights")
+            strong_associations = len(rules[rules['lift'] > 2])
+            avg_lift = rules['lift'].mean()
+            max_confidence = rules['confidence'].max() * 100
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                metric_card(
+                    "Strong Associations",
+                    f"{strong_associations}",
+                    "Produk dengan Lift > 2"
+                )
+            
+            with col2:
+                metric_card(
+                    "Average Lift",
+                    f"{avg_lift:.2f}",
+                    "Rata-rata kekuatan asosiasi"
+                )
+            
+            with col3:
+                metric_card(
+                    "Max Confidence",
+                    f"{max_confidence:.1f}%",
+                    "Probabilitas tertinggi"
+                )
+        else:
+            st.error("Tidak cukup data untuk menghasilkan association rules. Coba kurangi minimum support.")
+            
+    except Exception as e:
+        st.error(f"Error dalam analisis: {str(e)}")
+        st.info("Coba kurangi jumlah data atau tingkatkan minimum support untuk mengurangi penggunaan memori.")
