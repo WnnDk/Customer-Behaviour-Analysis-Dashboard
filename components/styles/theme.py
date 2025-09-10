@@ -27,7 +27,7 @@ def apply_theme():
         
         .metric-description {
             font-size: 0.9em;
-            color: #00000;
+            color: #000000;
         }
         
         .stMarkdown {
