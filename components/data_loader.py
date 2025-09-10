@@ -14,59 +14,66 @@ def load_data(uploaded_file):
         pd.DataFrame or None: Processed DataFrame if successful, None if failed
     """
     if uploaded_file is not None:
-        try:
-            # Coba beberapa encoding yang umum digunakan
-            encodings = ['latin1', 'iso-8859-1', 'cp1252', 'utf-8']
-            for encoding in encodings:
+        # Coba beberapa encoding yang umum digunakan
+        encodings = ['latin1', 'iso-8859-1', 'cp1252', 'utf-8']
+        
+        for encoding in encodings:
+            try:
+                # Baca CSV dengan encoding tertentu
+                df = pd.read_csv(
+                    uploaded_file,
+                    encoding=encoding,
+                    on_bad_lines='skip',
+                    low_memory=False,
+                    dtype={
+                        'InvoiceNo': str,
+                        'StockCode': str,
+                        'Description': str,
+                        'Quantity': float,
+                        'UnitPrice': float,
+                        'CustomerID': str,
+                        'Country': str
+                    }
+                )
+                
+                # Jika berhasil membaca file, lakukan preprocessing
                 try:
-                    df = pd.read_csv(
-                        uploaded_file,
-                        encoding=encoding,  # Coba berbagai encoding
-                on_bad_lines='skip',  # Skip baris yang bermasalah
-                low_memory=False,  # Hindari warning untuk mixed types
-                dtype={
-                    'InvoiceNo': str,
-                    'StockCode': str,
-                    'Description': str,
-                    'Quantity': float,
-                    'UnitPrice': float,
-                    'CustomerID': str,
-                    'Country': str
-                }
-            )
-            
-            # Bersihkan data
-            df = df.dropna(subset=['InvoiceNo', 'Description', 'Quantity', 'UnitPrice'])
-            
-            # Convert InvoiceDate to datetime
-            df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'], errors='coerce')
-            df = df.dropna(subset=['InvoiceDate'])  # Hapus baris dengan tanggal invalid
-            
-            # Calculate TotalAmount
-            df['TotalAmount'] = df['Quantity'] * df['UnitPrice']
-            
-            # Filter data yang valid
-            df = df[
-                (df['Quantity'] > 0) &  # Hanya quantity positif
-                (df['UnitPrice'] > 0)   # Hanya harga positif
-            ]
-            
-                    # Jika berhasil membaca file, langsung return
+                    # Bersihkan data
+                    df = df.dropna(subset=['InvoiceNo', 'Description', 'Quantity', 'UnitPrice'])
+                    
+                    # Convert InvoiceDate to datetime
+                    df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'], errors='coerce')
+                    df = df.dropna(subset=['InvoiceDate'])  # Hapus baris dengan tanggal invalid
+                    
+                    # Calculate TotalAmount
+                    df['TotalAmount'] = df['Quantity'] * df['UnitPrice']
+                    
+                    # Filter data yang valid
+                    df = df[
+                        (df['Quantity'] > 0) &  # Hanya quantity positif
+                        (df['UnitPrice'] > 0)   # Hanya harga positif
+                    ]
+                    
+                    # Jika preprocessing berhasil, return DataFrame
                     return df
-                except UnicodeDecodeError:
-                    # Jika encoding ini gagal, coba encoding berikutnya
-                    continue
+                    
                 except Exception as e:
-                    # Jika ada error lain, tampilkan error dan coba encoding berikutnya
-                    st.warning(f"Warning with {encoding} encoding: {str(e)}")
+                    st.error(f"Error preprocessing data: {str(e)}")
                     continue
-            
-            # Jika semua encoding gagal
-            st.error("Failed to read the file with any supported encoding")
-            return None
-        except Exception as e:
-            st.error(f"Error loading data: {str(e)}")
-            return None
+                    
+            except UnicodeDecodeError:
+                # Jika encoding ini gagal, coba encoding berikutnya
+                st.warning(f"Failed to read with {encoding} encoding, trying next...")
+                continue
+                
+            except Exception as e:
+                # Jika ada error lain, tampilkan error dan coba encoding berikutnya
+                st.warning(f"Error with {encoding} encoding: {str(e)}")
+                continue
+        
+        # Jika semua encoding gagal
+        st.error("Failed to read the file with any supported encoding")
+        return None
             
     return None
 
