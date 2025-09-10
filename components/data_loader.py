@@ -2,6 +2,16 @@
 
 import streamlit as st
 import pandas as pd
+from datetime import datetime
+
+def format_date_safely(date_value):
+    """Format date safely, handling both datetime and string inputs."""
+    try:
+        if isinstance(date_value, str):
+            date_value = pd.to_datetime(date_value)
+        return date_value.strftime('%Y-%m-%d')
+    except:
+        return str(date_value)
 
 @st.cache_data
 def load_data(uploaded_file):
@@ -102,14 +112,16 @@ def display_data_preview(df: pd.DataFrame):
         with col1:
             st.metric("Total Records", f"{len(df):,}")
         with col2:
-            st.metric("Time Period", f"{df['InvoiceDate'].min().strftime('%Y-%m-%d')} to {df['InvoiceDate'].max().strftime('%Y-%m-%d')}")
+            min_date = format_date_safely(df['InvoiceDate'].min())
+            max_date = format_date_safely(df['InvoiceDate'].max())
+            st.metric("Time Period", f"{min_date} to {max_date}")
         with col3:
             st.metric("Total Customers", f"{df['CustomerID'].nunique():,}")
         
         # Show sample data
         st.markdown("### 📋 Sample Data")
-        st.dataframe(df.head(), use_container_width=True)
+        st.dataframe(df.head(), width='stretch')
         
         # Show summary statistics
         st.markdown("### 📈 Summary Statistics")
-        st.dataframe(df.describe(), use_container_width=True)
+        st.dataframe(df.describe(), width='stretch')

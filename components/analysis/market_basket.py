@@ -103,7 +103,10 @@ def display_market_basket_analysis(df: pd.DataFrame):
             alt.Tooltip('Transaction_Percentage:Q', title='% of Transactions', format='.1f'),
             alt.Tooltip('Total_Quantity:Q', title='Total Units Sold')
         ]
-    ).properties(height=300)
+    ).properties(
+        height=300,
+        width="container"  # Gunakan width="container" untuk mengisi lebar container
+    )
     
     st.altair_chart(chart, use_container_width=True)
     
@@ -140,7 +143,7 @@ def display_market_basket_analysis(df: pd.DataFrame):
             rules_formatted = pd.DataFrame(formatted_rules)
             
             # Tampilkan dataframe tanpa styling khusus
-            st.dataframe(rules_formatted, use_container_width=True)
+            st.dataframe(rules_formatted, width='stretch')
             
             # Visualization
             scatter = alt.Chart(rules).mark_circle(size=60).encode(
@@ -159,7 +162,10 @@ def display_market_basket_analysis(df: pd.DataFrame):
                     alt.Tooltip('confidence:Q', title='Confidence', format='.1%'),
                     alt.Tooltip('lift:Q', title='Lift', format='.2f')
                 ]
-            ).properties(height=400)
+            ).properties(
+                height=400,
+                width="container"  # Gunakan width="container" untuk mengisi lebar container
+            )
             
             st.altair_chart(scatter, use_container_width=True)
             
