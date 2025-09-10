@@ -5,13 +5,23 @@ import pandas as pd
 
 @st.cache_data
 def load_data(uploaded_file):
-    """Load and preprocess data from uploaded file."""
+    """Load and preprocess data from uploaded file.
+    
+    Args:
+        uploaded_file: File object from st.file_uploader
+        
+    Returns:
+        pd.DataFrame or None: Processed DataFrame if successful, None if failed
+    """
     if uploaded_file is not None:
         try:
-            # Baca CSV dengan parameter tambahan untuk menangani masalah encoding dan parsing
-            df = pd.read_csv(
-                uploaded_file,
-                encoding='utf-8',  # Coba dengan UTF-8 encoding
+            # Coba beberapa encoding yang umum digunakan
+            encodings = ['latin1', 'iso-8859-1', 'cp1252', 'utf-8']
+            for encoding in encodings:
+                try:
+                    df = pd.read_csv(
+                        uploaded_file,
+                        encoding=encoding,  # Coba berbagai encoding
                 on_bad_lines='skip',  # Skip baris yang bermasalah
                 low_memory=False,  # Hindari warning untuk mixed types
                 dtype={
@@ -41,8 +51,19 @@ def load_data(uploaded_file):
                 (df['UnitPrice'] > 0)   # Hanya harga positif
             ]
             
-            return df
+                    # Jika berhasil membaca file, langsung return
+                    return df
+                except UnicodeDecodeError:
+                    # Jika encoding ini gagal, coba encoding berikutnya
+                    continue
+                except Exception as e:
+                    # Jika ada error lain, tampilkan error dan coba encoding berikutnya
+                    st.warning(f"Warning with {encoding} encoding: {str(e)}")
+                    continue
             
+            # Jika semua encoding gagal
+            st.error("Failed to read the file with any supported encoding")
+            return None
         except Exception as e:
             st.error(f"Error loading data: {str(e)}")
             return None
