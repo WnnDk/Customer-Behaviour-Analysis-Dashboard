@@ -36,7 +36,7 @@ with col2:
     st.markdown("<br>", unsafe_allow_html=True)  # For alignment
     # Link to download sample data from external source
     st.markdown("""
-        <a href="https://raw.githubusercontent.com/WnnDk/customer-behaviour-analysis-dashboard/master/OnlineRetail.csv" 
+        <a href="https://github.com/WnnDk/Customer-Behaviour-Analysis-Dashboard/blob/master/OnlineRetail.csv" 
            target="_blank" 
            style="
                display: inline-block;
