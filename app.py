@@ -3,6 +3,7 @@
 import streamlit as st
 from components.styles.theme import apply_theme
 from components.data_loader import load_data, display_data_preview
+from components.download_section import display_download_section
 from components.analysis import (
     display_rfm_analysis,
     display_market_basket_analysis,
@@ -25,8 +26,20 @@ apply_theme()
 st.markdown("<h1 style='text-align: center;'>🛒 Customer Behavior Analysis Dashboard</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; font-size: 1.2em;'>Analisis perilaku pelanggan menggunakan RFM Analysis</p>", unsafe_allow_html=True)
 
-# File upload
-uploaded_file = st.file_uploader("Upload your Excel file", type=["csv"])
+# File upload section
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+
+with col2:
+    st.markdown("<br>", unsafe_allow_html=True)  # For alignment
+    st.download_button(
+        label="📥 Download Sample Data",
+        data=open("OnlineRetail.csv", "rb"),
+        file_name="OnlineRetail.csv",
+        mime="text/csv"
+    )
 
 # Create tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
