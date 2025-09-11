@@ -35,11 +35,13 @@ env/
 .streamlit/secrets.toml
 
 # Data
-*.csv
 *.xlsx
 *.xls
 *.db
 *.sqlite3
+
+# Allow specific data files
+!OnlineRetail.csv
 
 # Logs
 *.log
