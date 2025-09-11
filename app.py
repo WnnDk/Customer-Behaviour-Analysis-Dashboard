@@ -34,12 +34,24 @@ with col1:
 
 with col2:
     st.markdown("<br>", unsafe_allow_html=True)  # For alignment
-    st.download_button(
-        label="📥 Download Sample Data",
-        data=open("OnlineRetail.csv", "rb"),
-        file_name="OnlineRetail.csv",
-        mime="text/csv"
-    )
+    # Link to download sample data from external source
+    st.markdown("""
+        <a href="https://raw.githubusercontent.com/wnndy/customer-behaviour-analysis-dashboard/main/OnlineRetail.csv" 
+           target="_blank" 
+           style="
+               display: inline-block;
+               padding: 0.5rem 1rem;
+               background-color: #00acee;
+               color: white;
+               text-decoration: none;
+               border-radius: 0.5rem;
+               text-align: center;
+               font-weight: 500;
+               margin-top: 0.5rem;
+           ">
+           📥 Download Sample Data
+        </a>
+    """, unsafe_allow_html=True)
 
 # Create tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
